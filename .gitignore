@@ -1,0 +1,6 @@
+*.csv
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+.ipynb_checkpoints/ 
