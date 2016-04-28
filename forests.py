@@ -1,5 +1,9 @@
 import pandas as pd
 import datetime as dt
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import Imputer
+from sklearn.cross_validation import train_test_split
 
 def inv_dict(map_dict):
 	"""Creates an inverse dictionary map"""
@@ -65,5 +69,98 @@ first_browser_ord = {'Chrome':0, 'IE':1, 'Firefox':2, 'Safari':3, '-unknown-':4,
 country_ord = {"NDF":0, "US":1, "other":2, "FR":3, "CA":4, "GB":5, "ES":6,
 			   "IT":7, "PT":8, "NL":9, "DE":10, "AU":11}
 
+country = inv_dict(country_ord)
+
 # to actually map these we do dataframe.map(dict)
+train_x["gender"] = train_x.gender.map(gender_ord)
+train_x["signup_method"] = train_x.signup_method.map(signup_method_ord)
+train_x["language"] = train_x.language.map(language_ord)
+train_x["affiliate_channel"] = train_x.affiliate_channel.map(affiliate_channel_ord)
+train_x["affiliate_provider"] = train_x.affiliate_provider.map(affiliate_provider_ord)
+train_x["first_affiliate_tracked"] = train_x.first_affiliate_tracked.map(first_affiliate_tracked_ord)
+train_x["signup_app"] = train_x.signup_app.map(signup_app_ord)
+train_x["first_device_type"] = train_x.first_device_type.map(first_device_type_ord)
+train_x["first_browser"] = train_x.first_browser.map(first_browser_ord)
+train_y["country_destination"] = train_y.country_destination.map(country_ord)
+
+test["gender"] = test.gender.map(gender_ord)
+test["signup_method"] = test.signup_method.map(signup_method_ord)
+test["language"] = test.language.map(language_ord)
+test["affiliate_channel"] = test.affiliate_channel.map(affiliate_channel_ord)
+test["affiliate_provider"] = test.affiliate_provider.map(affiliate_provider_ord)
+test["first_affiliate_tracked"] = test.first_affiliate_tracked.map(first_affiliate_tracked_ord)
+test["signup_app"] = test.signup_app.map(signup_app_ord)
+test["first_device_type"] = test.first_device_type.map(first_device_type_ord)
+test["first_browser"] = test.first_browser.map(first_browser_ord)
+
+# remove the id field
+columns = np.array(["age", "timestamp_first_active", "signup_flow", "gender", 
+					"signup_method", "language", "affiliate_channel",
+					"affiliate_provider", "first_affiliate_tracked", "signup_app",
+					"first_device_type", "first_browser"])
+
+# xtrain and xtest is the dataframe with the id taken out
+xtrain = train_x[columns]
+xtest = test[columns]
+
+imp = Imputer(strategy="median")
+xtrain_na = imp.fit_transform(xtrain)
+xtest_na = imp.fit_transform(xtest)
+
+
+def rforests(trainx, trainy, test, n_estimators=100, standardize=True):
+	trainy = np.ravel(trainy)
+	if standardize:
+		# does it even make sense to standardize these values?
+		means = np.mean(trainx, axis=0)
+		trainx = (trainx.T / means[:,None]).T
+
+	forest = RandomForestClassifier(n_estimators)
+	forest.fit(trainx, trainy)
+	output = forest.predict(test)
+	df_out = pd.DataFrame(output, columns=["prediction"])
+	df_out = df_out.prediction.map(country)
+	return forest, df_out
+
+def cross_val(trainx, trainy, n_estimators=100, test_split=0.4, num_cross=10):
+	score = np.zeros((1,num_cross))
+
+	for i in range(num_cross):
+		X_train, X_test, y_train, y_test = train_test_split(trainx, trainy, 
+															test_size=test_split)
+		forest = RandomForestClassifier(n_estimators)
+
+		# Making the column vectors into 1d arrays
+		y_train = np.ravel(y_train)
+		y_test = np.ravel(y_test)
+		forest.fit(X_train, y_train)
+		score[0, i] = forest.score(X_test, y_test)
+
+	return score, forest
+
+def benchmark_countries(trainy, country="NDF"):
+	"""Finding the accuracy of just using one country or NDF from the training data"""
+	# Because we've encoded 
+	if country == "NDF":
+		pred = np.zeros(trainy.shape)
+
+	else:
+		pred = country_ord[country]*np.ones(trainy.shape)
+
+	comp = pred == trainy
+
+	acc = comp.sum()/comp.count()
+
+	return acc
+
+
+def make_sub(df_out, test, name = "my"):
+	sub = pd.DataFrame([test.id, df_out], index=["id", "country"])
+	submission = sub.T
+	subname = name + "submission.csv"
+	submission.to_csv(subname, index=False)
+	return submission
+
+
+# forest, output = rforests(xtrain_na, train_y, xtest_na)
 
