@@ -414,3 +414,5 @@ dt = {"user_id": str,
 "OperaPhone": bool}
 
 df = pd.read_csv("sessionsFE.csv", dtype=dt)
+
+grouped = df.groupby("user_id")

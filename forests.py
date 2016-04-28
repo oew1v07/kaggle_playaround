@@ -153,6 +153,12 @@ def benchmark_countries(trainy, country="NDF"):
 
 	return acc
 
+def calc_NDCG():
+	"""This needs to work out the relevances and once the NDCG is calculated
+	then all of the NDCG for each query is added together and divided by 
+	the total amount of queries giving a mean NDCG score."""
+	
+
 
 def make_sub(df_out, test, name = "my"):
 	sub = pd.DataFrame([test.id, df_out], index=["id", "country"])
