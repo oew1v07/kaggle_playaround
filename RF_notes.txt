@@ -9,23 +9,27 @@ Cross val was carried out 10 times and got the following results
 [ 0.56737447,  0.5669177,  0.56475094,  0.56617983,  0.5656762,
  0.56459868,  0.56341575,  0.56610956,  0.56628524,  0.56801865]
 
- I've now got code to standardize the input (although not the target). Not sure if this even makes sense for the job we're doing. All date stuff has been left out as I'm not sure how to encode it unless I make an arbitrary decision of minimum date = 1 and then depending on timedeltas the rest of the dates follow.
+Cross validation could also be used to work out some sparsity calculations, at what point does the number of training samples affect the accuracy, could then do an ROC curve based on training size.
 
- I haven't played around with hyperparameters, but the only one that makes sense is n_estimators.
+I've now got code to standardize the input (although not the target). Not sure if this even makes sense for the job we're doing. All date stuff has been left out as I'm not sure how to encode it unless I make an arbitrary decision of minimum date = 1 and then depending on timedeltas the rest of the dates follow.
 
- It would be good to get an idea of the distribution of these decision trees. There is some code to do this however the input is only 2 dimensional. We could use MDS to get a representation and then colour background based on prediction and foreground on actual.
+I haven't played around with hyperparameters, but the only one that makes sense is n_estimators.
 
- I also made a benchmark calculator, which calculates the accuracy (as defined above) when using only one country as the predicted variable. Obviously this is only done with the training dataset. The results are as follows:
+It would be good to get an idea of the distribution of these decision trees. There is some code to do this however the input is only 2 dimensional. We could use MDS to get a representation and then colour background based on prediction and foreground on actual.
 
- NDF	0.583473
- US 	0.292226
- FR 	0.023532
- IT 	0.013282
- GB 	0.010888
- ES 	0.010536
- CA 	0.006690
- DE 	0.004971
- other	0.047290
- NL 	0.003570
- AU 	0.002525
- PT 	0.001017
+I also made a benchmark calculator, which calculates the accuracy (as defined above) when using only one country as the predicted variable. Obviously this is only done with the training dataset. The results are as follows:
+
+NDF	0.583473
+US 	0.292226
+FR 	0.023532
+IT 	0.013282
+GB 	0.010888
+ES 	0.010536
+CA 	0.006690
+DE 	0.004971
+other	0.047290
+NL 	0.003570
+AU 	0.002525
+PT 	0.001017
+
+Do we need to create our own NDCG measure? All this work is only doing the first one whereas the competition allows multiple entries.
