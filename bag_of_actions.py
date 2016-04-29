@@ -112,5 +112,5 @@ cols = ['user_id', 'view_search_results', 'wishlist_content_update',
        'view_ghostings', 'host_standard_suspension',
        'deactivate_user_account']
 
-pd.read_csv("User_bag_of_action_detail", columns = cols)
+df_detail = pd.read_csv("User_bag_of_action_detail", columns = cols)
 
