@@ -1,35 +1,158 @@
-Random Forest notes
-
-- Had to use an imputer to get rid of nans in the age category. However I'm not sure that it is the most sensible way of dealing with them (mean, median and mode) I think this needs to be experimented with empirically
-
-n=100 using all the training data 0.50916, this is below the all NDF scenario.
-
-Again using n=100 doing a cross val on the training data it suggests that the accuracy has an average of 0.565932 (this is number of correct classifications/number of classifications).
-Cross val was carried out 10 times and got the following results
-[ 0.56737447,  0.5669177,  0.56475094,  0.56617983,  0.5656762,
- 0.56459868,  0.56341575,  0.56610956,  0.56628524,  0.56801865]
-
-Cross validation could also be used to work out some sparsity calculations, at what point does the number of training samples affect the accuracy, could then do an ROC curve based on training size.
-
-I've now got code to standardize the input (although not the target). Not sure if this even makes sense for the job we're doing. All date stuff has been left out as I'm not sure how to encode it unless I make an arbitrary decision of minimum date = 1 and then depending on timedeltas the rest of the dates follow.
-
-I haven't played around with hyperparameters, but the only one that makes sense is n_estimators.
-
-It would be good to get an idea of the distribution of these decision trees. There is some code to do this however the input is only 2 dimensional. We could use MDS to get a representation and then colour background based on prediction and foreground on actual.
+Design Choices
+Categorical data is either hot encoded or categorical to numeric.
+nans are given a class of their own. Why aren't we standardising?
 
 I also made a benchmark calculator, which calculates the accuracy (as defined above) when using only one country as the predicted variable. Obviously this is only done with the training dataset. The results are as follows:
 
-NDF	0.583473
-US 	0.292226
-FR 	0.023532
-IT 	0.013282
-GB 	0.010888
-ES 	0.010536
-CA 	0.006690
-DE 	0.004971
-other	0.047290
-NL 	0.003570
-AU 	0.002525
-PT 	0.001017
+In the case of one variable the NDCG ends up being the accuracy anyway!
 
-Do we need to create our own NDCG measure? All this work is only doing the first one whereas the competition allows multiple entries.
+NDF		0.583473
+US 		0.292226
+FR 		0.023532
+IT 		0.013282
+GB 		0.010888
+ES 		0.010536
+CA 		0.006690
+DE 		0.004971
+other	0.047290
+NL 		0.003570
+AU 		0.002525
+PT 		0.001017
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+User hot encoded + bag of action_detail and action_type
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Cross val n=100 10 times 60% training 40% test
+
+[ 0.84569766,  0.84426238,  0.84565707,  0.84504722,  0.84337715,  0.84588346,  0.84452901,  0.84512821,  0.84406181,  0.84524792]
+
+Number of estimators was investigated and the results are in out_importances200_n_est_user_hot_sess.csv and out_scores_n_est_user_hot_sess.csv. The following is the mean score for each n_estimator:
+
+1,     0.575795
+8,     0.795248
+16,    0.820748
+24,    0.830536
+32,    0.834560
+40,    0.836876
+48,    0.839616
+55,    0.841206
+63,    0.841506
+71,    0.843045
+79,    0.843654
+87,    0.844456
+95,    0.844535
+102    0.845575
+110    0.846028
+118    0.845873
+126    0.846483
+134    0.845956
+142    0.846938
+150    0.846722
+
+Best n_estimator 142
+
+Most important
+
+'view': 10, 'dac_day':10, 'click':7, 'booking_request':1, 'age_bucketNA':1, 'age_NAs':1
+
+Best n_estimator = 150 this was taken and the entire dataset trained. The confusion matrix showed that 
+[ 0.99956648,  1.        ,  1.        ,  1.        ,  1.        ]
+were in the first one, first two, etc. NDCG: 0.9998
+
+Test data submitted was: 0.71533
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+User categorically encoded 
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Cross val n=100 10 times 60% training 40% test
+
+Gain
+[ 0.79366644,  0.79246983,  0.79403579,  0.7921594 ,  0.79266243,  0.79278365,  0.7934431 ,  0.79322448,  0.79259198,  0.79311104]
+ and 
+[ 0.79297692,  0.79120129,  0.79225096,  0.7926094 ,  0.79198059,  0.79246647,  0.79154373,  0.7925102 ,  0.79338994,  0.79268488]
+
+This produces a 0.565932 percentage accurate
+
+Number of estimators was investigated and the results are in out_importances200_n_est_user_nodates.csv and out_scores_n_est_user_nodates.csv. The following is the mean score for each n_estimator:
+
+1      0.696432
+8      0.770710
+16     0.780606
+24     0.784105
+32     0.786093
+40     0.787829
+48     0.788884
+55     0.789661
+63     0.790500
+71     0.791159
+79     0.791135
+87     0.791830
+95     0.792042
+102    0.792559
+110    0.792756
+118    0.792656
+126    0.793096
+134    0.793002
+142    0.792818
+150    0.793517
+
+Best n_estimator = 150
+
+Looking at the feature importances from this cross validation of 200 different runs is interesting. It is almost always the same four with the categorized data-categorized number: age,gender,first_affiliate_tracked, first browser. Also age is always first and then the others switch around. The following table shows the amount of times each feature is in the top three
+
+age                       200.0
+first_affiliate_tracked   150.0
+first_browser             154.0
+gender                     95.0
+signup_method               1.0
+
+Best n_estimator = 150 this was taken and the entire dataset trained. The confusion matrix showed that 
+
+[ 0.72439108,  0.91378349,  0.95863688,  0.9775124 ,  0.9872664 ]
+
+were in the first one, first two, etc. NDCG: 0.8782
+
+Test data submitted got: 0.84480
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+User hot encoded data
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Cross val n=100 10 times 60% training 40% test
+
+[ 0.79589316,  0.79587635,  0.79733473,  0.79692213,  0.79722842,  0.79587281,  0.79673046,  0.7972377 ,  0.79650943,  0.79646331]
+
+Most important
+
+This has also completely altered the most important feature which of course from initial data dates were omitted. In this the following where the most important 'dac_day', 'dac_yearmonthday', 'tfa_yearmonthday', dac_day is always first and the other two switch around.
+
+Investigating n_estimator we find the mean of the cross-validation is
+
+1	  0.522056
+8     0.742844
+16    0.770135
+24    0.780325
+32    0.784627
+40    0.787654
+48    0.790230
+55    0.791359
+63    0.792725
+71    0.793580
+79    0.794251
+87    0.795267
+95    0.796067
+102   0.796326
+110   0.796802
+118   0.797476
+126   0.797552
+134   0.798482
+142   0.798692
+150   0.798537
+
+Best n_estimator = 142 this was taken and the entire dataset trained. The confusion matrix showed that 
+[ 0.94939354,  0.99326778,  0.9990068 ,  0.99983134,  0.99999532]
+were in the first one, first two, etc. NDCG: 0.9804
+
+Test data submitted got: 0.86216
